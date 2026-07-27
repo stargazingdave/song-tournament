@@ -1,0 +1,26 @@
+
+> song-tournament@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3001
+
+  ▲ Next.js 14.2.35
+  - Local:        http://127.0.0.1:3001
+  - Network:      http://127.0.0.1:3001
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 2.9s
+ ○ Compiling / ...
+ ✓ Compiled / in 6.3s (680 modules)
+ GET / 200 in 52ms
+ GET / 200 in 27ms
+ ○ Compiling /api/state ...
+ ✓ Compiled /api/state in 1009ms (411 modules)
+ GET /api/state 200 in 1786ms
+ GET /api/state 200 in 198ms
+ ✓ Compiled /api/members/select in 190ms (413 modules)
+ POST /api/members/select 200 in 509ms
+ GET /api/state 200 in 194ms
+ GET / 200 in 182ms
+ GET /api/state 200 in 201ms
+ GET /api/state 200 in 145ms
+[?25h
