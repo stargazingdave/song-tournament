@@ -1,6 +1,8 @@
 import type { FormEvent } from "react";
 import { useState } from "react";
-import { BarChart3, ChevronLeft, ChevronRight, Pencil, Play, Plus, Star, Trash2 } from "lucide-react";
+import {
+  ArrowUpDown, BarChart3, ChevronLeft, ChevronRight, Medal, Pencil, Play, Plus, Star, Trash2
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -9,7 +11,9 @@ import {
 import type { AppState } from "@/lib/types";
 
 type Poll = AppState["polls"][number];
+type PollEntry = Poll["songs"][number];
 type PlayingSong = { pollId: string; songId: string };
+type PollSortKey = "score" | "votes" | "title" | "artist";
 type Props = {
   songs: AppState["songs"];
   polls: Poll[];
@@ -78,9 +82,35 @@ export function PollsPanel({
   songs, polls, busy, onCreate, onEdit, onDelete, onScore
 }: Props) {
   const [playingSong, setPlayingSong] = useState<PlayingSong | null>(null);
+  const [resultsPollId, setResultsPollId] = useState<string | null>(null);
+  const [pollSorts, setPollSorts] = useState<Record<string, PollSortKey>>({});
   const playingPoll = polls.find((poll) => poll.id === playingSong?.pollId) ?? null;
-  const playingIndex = playingPoll?.songs.findIndex((entry) => entry.song.id === playingSong?.songId) ?? -1;
-  const playingEntry = playingIndex >= 0 ? playingPoll?.songs[playingIndex] ?? null : null;
+  const resultsPoll = polls.find((poll) => poll.id === resultsPollId) ?? null;
+
+  const sortEntries = (entries: PollEntry[], sort: PollSortKey) => [...entries].sort((a, b) => {
+    if (sort === "score") {
+      return (b.average_score ?? -1) - (a.average_score ?? -1)
+        || b.score_count - a.score_count
+        || a.song.title.localeCompare(b.song.title);
+    }
+    if (sort === "votes") {
+      return b.score_count - a.score_count
+        || (b.average_score ?? -1) - (a.average_score ?? -1)
+        || a.song.title.localeCompare(b.song.title);
+    }
+    if (sort === "artist") {
+      return (a.song.artist ?? "").localeCompare(b.song.artist ?? "")
+        || a.song.title.localeCompare(b.song.title);
+    }
+    return a.song.title.localeCompare(b.song.title);
+  });
+
+  const playingEntries = playingPoll
+    ? sortEntries(playingPoll.songs, pollSorts[playingPoll.id] ?? "score")
+    : [];
+  const playingIndex = playingEntries.findIndex((entry) => entry.song.id === playingSong?.songId);
+  const playingEntry = playingIndex >= 0 ? playingEntries[playingIndex] : null;
+  const rankedResults = resultsPoll ? sortEntries(resultsPoll.songs, "score") : [];
 
   return (
     <section className="section-block polls-section">
@@ -105,8 +135,29 @@ export function PollsPanel({
                 <Button variant="ghost" size="icon" className="danger" onClick={() => onDelete(poll.id)} disabled={busy} aria-label={`Delete ${poll.title}`}><Trash2 /></Button>
               </div>
             </div>
+            <div className="poll-toolbar">
+              <label className="sort-field poll-sort">
+                <ArrowUpDown aria-hidden="true" />
+                <select
+                  value={pollSorts[poll.id] ?? "score"}
+                  onChange={(event) => setPollSorts((current) => ({
+                    ...current,
+                    [poll.id]: event.target.value as PollSortKey
+                  }))}
+                  aria-label={`Sort songs in ${poll.title}`}
+                >
+                  <option value="score">Top rated</option>
+                  <option value="votes">Most ratings</option>
+                  <option value="title">Song title</option>
+                  <option value="artist">Artist</option>
+                </select>
+              </label>
+              <Button variant="outline" onClick={() => setResultsPollId(poll.id)}>
+                <BarChart3 /> View results
+              </Button>
+            </div>
             <div className="score-list">
-              {poll.songs.map((entry) => (
+              {sortEntries(poll.songs, pollSorts[poll.id] ?? "score").map((entry) => (
                 <div className="score-row" key={entry.poll_song_id}>
                   <div className="score-song">
                     {entry.song.youtube_video_id ? (
@@ -126,21 +177,29 @@ export function PollsPanel({
                     </div>
                   </div>
                   <div className="rating">
-                    <div className="stars" aria-label={`Rate ${entry.song.title}`}>
-                      {[1, 2, 3, 4, 5].map((score) => (
-                        <button
-                          type="button"
-                          key={score}
-                          className={entry.current_member_score === score ? "star active" : "star"}
-                          onClick={() => onScore(poll.id, entry.song.id, entry.current_member_score === score ? null : score)}
-                          disabled={busy}
-                          aria-label={`${score} star${score === 1 ? "" : "s"}`}
-                        >
-                          <Star aria-hidden="true" />
-                        </button>
-                      ))}
+                    <div className="rating-scale">
+                      <span aria-hidden="true">1</span>
+                      <div className="stars" aria-label={`Rate ${entry.song.title} from 1 to 5`}>
+                        {[1, 2, 3, 4, 5].map((score) => (
+                          <button
+                            type="button"
+                            key={score}
+                            className={entry.current_member_score && score <= entry.current_member_score ? "star active" : "star"}
+                            onClick={() => onScore(poll.id, entry.song.id, entry.current_member_score === score ? null : score)}
+                            disabled={busy}
+                            aria-label={`${score} star${score === 1 ? "" : "s"}`}
+                            aria-pressed={entry.current_member_score === score}
+                          >
+                            <Star aria-hidden="true" />
+                          </button>
+                        ))}
+                      </div>
+                      <span aria-hidden="true">5</span>
                     </div>
-                    <span className="poll-result">{entry.average_score ? `${entry.average_score.toFixed(1)} avg` : "Not rated"} · {entry.score_count} vote{entry.score_count === 1 ? "" : "s"}</span>
+                    <span className={entry.average_score ? "poll-result has-score" : "poll-result"}>
+                      {entry.average_score ? <strong>{entry.average_score.toFixed(1)}</strong> : "—"}
+                      <span>{entry.average_score ? "average" : "Not rated"} · {entry.score_count} vote{entry.score_count === 1 ? "" : "s"}</span>
+                    </span>
                   </div>
                 </div>
               ))}
@@ -151,6 +210,36 @@ export function PollsPanel({
           <div className="empty-state compact"><BarChart3 /><div><h3>Nothing to vote on right now</h3><p>Select songs from the bank below to start a poll.</p></div></div>
         ) : null}
       </div>
+
+      <Dialog open={Boolean(resultsPoll)} onOpenChange={(open) => !open && setResultsPollId(null)}>
+        <DialogContent className="results-dialog">
+          <DialogHeader>
+            <DialogTitle>{resultsPoll?.title} results</DialogTitle>
+            <DialogDescription>
+              Ranked by average rating, with the number of submitted ratings shown for context.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="results-summary">
+            {rankedResults.map((entry, index) => (
+              <div className="result-row" key={entry.poll_song_id}>
+                <span className={index < 3 ? `result-rank rank-${index + 1}` : "result-rank"}>
+                  {index < 3 ? (
+                    <><Medal aria-hidden="true" /><span className="sr-only">Rank {index + 1}</span></>
+                  ) : index + 1}
+                </span>
+                <div className="result-song">
+                  <strong>{entry.song.title}</strong>
+                  <span>{entry.song.artist || "Unknown artist"}</span>
+                </div>
+                <div className="result-score">
+                  <strong>{entry.average_score ? entry.average_score.toFixed(1) : "—"}</strong>
+                  <span>{entry.score_count} rating{entry.score_count === 1 ? "" : "s"}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={Boolean(playingEntry)} onOpenChange={(open) => !open && setPlayingSong(null)}>
         <DialogContent className="player-dialog">
@@ -180,23 +269,28 @@ export function PollsPanel({
                     {" · "}{playingEntry.score_count} vote{playingEntry.score_count === 1 ? "" : "s"}
                   </small>
                 </div>
-                <div className="stars large" aria-label={`Rate ${playingEntry.song.title}`}>
-                  {[1, 2, 3, 4, 5].map((score) => (
-                    <button
-                      type="button"
-                      key={score}
-                      className={playingEntry.current_member_score === score ? "star active" : "star"}
-                      onClick={() => onScore(
-                        playingPoll.id,
-                        playingEntry.song.id,
-                        playingEntry.current_member_score === score ? null : score
-                      )}
-                      disabled={busy}
-                      aria-label={`${score} star${score === 1 ? "" : "s"}`}
-                    >
-                      <Star aria-hidden="true" />
-                    </button>
-                  ))}
+                <div className="rating-scale large-scale">
+                  <span aria-hidden="true">1</span>
+                  <div className="stars large" aria-label={`Rate ${playingEntry.song.title} from 1 to 5`}>
+                    {[1, 2, 3, 4, 5].map((score) => (
+                      <button
+                        type="button"
+                        key={score}
+                        className={playingEntry.current_member_score && score <= playingEntry.current_member_score ? "star active" : "star"}
+                        onClick={() => onScore(
+                          playingPoll.id,
+                          playingEntry.song.id,
+                          playingEntry.current_member_score === score ? null : score
+                        )}
+                        disabled={busy}
+                        aria-label={`${score} star${score === 1 ? "" : "s"}`}
+                        aria-pressed={playingEntry.current_member_score === score}
+                      >
+                        <Star aria-hidden="true" />
+                      </button>
+                    ))}
+                  </div>
+                  <span aria-hidden="true">5</span>
                 </div>
               </div>
               <div className="player-navigation">
@@ -204,20 +298,20 @@ export function PollsPanel({
                   variant="outline"
                   onClick={() => setPlayingSong({
                     pollId: playingPoll.id,
-                    songId: playingPoll.songs[playingIndex - 1].song.id
+                    songId: playingEntries[playingIndex - 1].song.id
                   })}
                   disabled={playingIndex <= 0}
                 >
                   <ChevronLeft /> Previous
                 </Button>
-                <span>{playingIndex + 1} of {playingPoll.songs.length}</span>
+                <span>{playingIndex + 1} of {playingEntries.length}</span>
                 <Button
                   variant="outline"
                   onClick={() => setPlayingSong({
                     pollId: playingPoll.id,
-                    songId: playingPoll.songs[playingIndex + 1].song.id
+                    songId: playingEntries[playingIndex + 1].song.id
                   })}
-                  disabled={playingIndex >= playingPoll.songs.length - 1}
+                  disabled={playingIndex >= playingEntries.length - 1}
                 >
                   Next <ChevronRight />
                 </Button>
