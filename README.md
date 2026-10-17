@@ -93,6 +93,8 @@ SUPABASE_SCHEMA=song_tournament
 
 Use the same URL and publishable key as Tasks. A secret key is needed only for administrative verification scripts, never by the normal app runtime. Keep database credentials and secret keys server-side.
 
+Configure the URL and publishable key in the hosting project's **Production** environment, then redeploy. Local `.env.local` files are not uploaded by Git. Older deployments configured only with `SUPABASE_SECRET_KEY` need the publishable key added for user authentication. Both Proxy and API routes accept `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` as aliases, as well as `SUPABASE_ANON_KEY` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` for legacy public keys. The secret key is never an authentication fallback.
+
 Expose `tasks` and `song_tournament` in the shared project's Data API settings. Allow each app's `/auth/confirm` URL, including signup/recovery query strings, under Authentication → URL Configuration. Default Supabase templates using `{{ .ConfirmationURL }}` work; custom templates must preserve the originating app's `{{ .RedirectTo }}`. Recovery should preserve `next=/auth/update-password` or use `type=recovery`.
 
 Apply migrations with connection settings in this app's env:
@@ -124,6 +126,7 @@ npm.cmd run dev -- --port 3101
 
 ```powershell
 npm.cmd run test:auth
+npm.cmd run test:env
 npm.cmd run typecheck
 npm.cmd run lint
 npm.cmd run build

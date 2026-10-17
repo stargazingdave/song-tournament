@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { authCookieOptions } from "@/lib/supabase-options";
+import { supabaseConfig } from "@/lib/env";
 
 export async function proxy(request: NextRequest) {
   if (
@@ -35,9 +36,10 @@ export async function proxy(request: NextRequest) {
   }
   let response = NextResponse.next({ request });
   response.headers.set("Cache-Control", "private, no-store");
+  const { url, key } = supabaseConfig();
   const supabase = createServerClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_PUBLISHABLE_KEY!,
+    url,
+    key,
     {
       cookieOptions: authCookieOptions,
       cookies: {

@@ -1,12 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { requiredEnv, supabaseSchema } from "@/lib/env";
+import { supabaseConfig, supabaseSchema } from "@/lib/env";
 import { authCookieOptions } from "@/lib/supabase-options";
 
 // Ordinary requests use the caller's JWT, so database RLS applies.
 export async function getSupabase() {
   const store = await cookies();
-  return createServerClient(requiredEnv("SUPABASE_URL"), requiredEnv("SUPABASE_PUBLISHABLE_KEY"), {
+  const { url, key } = supabaseConfig();
+  return createServerClient(url, key, {
     db: { schema: supabaseSchema() },
     cookieOptions: authCookieOptions,
     cookies: {
