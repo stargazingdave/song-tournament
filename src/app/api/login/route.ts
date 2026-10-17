@@ -1,16 +1,15 @@
 import { NextResponse } from "next/server";
-import { createSessionToken, setSessionCookie, verifyPassword } from "@/lib/auth";
+import { clearLegacyCookies } from "@/lib/auth";
 import { cleanText, jsonError, parseJson } from "@/lib/http";
+import { getSupabase } from "@/lib/supabase";
 
 export async function POST(request: Request) {
-  const body = await parseJson<{ password?: string }>(request);
-  const password = cleanText(body.password);
-
-  if (!password || !verifyPassword(password)) {
-    return jsonError("That password did not match.", 401);
-  }
-
-  setSessionCookie(createSessionToken());
-
+  const body = await parseJson<{ email?: string; password?: string }>(request);
+  const email = cleanText(body.email);
+  const password = typeof body.password === "string" ? body.password : "";
+  if (!email || !password) return jsonError("Enter your email and password.");
+  const { error } = await getSupabase().auth.signInWithPassword({ email, password });
+  if (error) return jsonError(error.message, 401);
+  clearLegacyCookies();
   return NextResponse.json({ ok: true });
 }

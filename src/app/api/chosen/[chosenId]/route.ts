@@ -6,7 +6,7 @@ import { getSupabase } from "@/lib/supabase";
 type Context = { params: { chosenId: string } };
 
 export async function PATCH(request: Request, { params }: Context) {
-  const { error: memberError } = requireMember();
+  const { error: memberError } = await requireMember();
   if (memberError) return memberError;
 
   const body = await parseJson<{ note?: string }>(request);
@@ -25,7 +25,7 @@ export async function PATCH(request: Request, { params }: Context) {
 }
 
 export async function DELETE(_request: Request, { params }: Context) {
-  const { error: memberError } = requireMember();
+  const { error: memberError } = await requireMember();
   if (memberError) return memberError;
 
   const { error } = await getSupabase().from("chosen_songs").delete().eq("id", params.chosenId);

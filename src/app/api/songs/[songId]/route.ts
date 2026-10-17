@@ -7,7 +7,7 @@ import { parseYoutubeUrl } from "@/lib/youtube";
 type Context = { params: { songId: string } };
 
 export async function PATCH(request: Request, { params }: Context) {
-  const { error: memberError } = requireMember();
+  const { error: memberError } = await requireMember();
   if (memberError) return memberError;
 
   const body = await parseJson<{ title?: string; artist?: string; youtubeUrl?: string }>(request);
@@ -45,7 +45,7 @@ export async function PATCH(request: Request, { params }: Context) {
 }
 
 export async function DELETE(_request: Request, { params }: Context) {
-  const { error: memberError } = requireMember();
+  const { error: memberError } = await requireMember();
   if (memberError) return memberError;
 
   const { error } = await getSupabase().from("songs").delete().eq("id", params.songId);

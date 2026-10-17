@@ -6,7 +6,7 @@ import { getSupabase } from "@/lib/supabase";
 type Context = { params: { pollId: string } };
 
 export async function PUT(request: Request, { params }: Context) {
-  const { error: memberError, memberId } = requireMember();
+  const { error: memberError, memberId } = await requireMember();
   if (memberError) return memberError;
 
   const body = await parseJson<{ songId?: string; score?: number | null }>(request);

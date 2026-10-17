@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
-import { clearSessionCookies } from "@/lib/auth";
+import { clearLegacyCookies } from "@/lib/auth";
+import { getSupabase } from "@/lib/supabase";
+import { jsonError } from "@/lib/http";
 
 export async function POST() {
-  clearSessionCookies();
+  const { error } = await getSupabase().auth.signOut({ scope: "local" });
+  if (error) return jsonError("Could not sign out. Please try again.", 500);
+  clearLegacyCookies();
   return NextResponse.json({ ok: true });
 }

@@ -4,14 +4,12 @@ import { Button } from "@/components/ui/button";
 type Props = {
   memberName: string;
   busy: boolean;
-  onSwitchMember: () => void;
   onLogout: () => void;
 };
 
 export function AppHeader({
   memberName,
   busy,
-  onSwitchMember,
   onLogout,
 }: Props) {
   return (
@@ -28,14 +26,6 @@ export function AppHeader({
         <span className="member-chip">
           <UserRound aria-hidden="true" /> {memberName}
         </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onSwitchMember}
-          disabled={busy}
-        >
-          Switch
-        </Button>
         <Button
           variant="ghost"
           size="icon"

@@ -4,7 +4,7 @@ import { jsonError, parseJson } from "@/lib/http";
 import { getSupabase } from "@/lib/supabase";
 
 export async function PUT(request: Request) {
-  const { error: memberError } = requireMember();
+  const { error: memberError } = await requireMember();
   if (memberError) return memberError;
 
   const body = await parseJson<{ orderedIds?: string[] }>(request);

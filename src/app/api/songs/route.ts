@@ -5,7 +5,7 @@ import { getSupabase } from "@/lib/supabase";
 import { parseYoutubeUrl } from "@/lib/youtube";
 
 export async function POST(request: Request) {
-  const { error: memberError, memberId } = requireMember();
+  const { error: memberError, memberId } = await requireMember();
   if (memberError) return memberError;
 
   const body = await parseJson<{ title?: string; artist?: string; youtubeUrl?: string }>(request);

@@ -28,8 +28,9 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [password, setPassword] = useState("");
   const [memberName, setMemberName] = useState("");
+  const [invitation, setInvitation] = useState("");
+  const [claimExisting, setClaimExisting] = useState(false);
   const [songForm, setSongForm] = useState<SongForm>(emptySongForm);
   const [editingSongId, setEditingSongId] = useState<string | null>(null);
   const [songDialogOpen, setSongDialogOpen] = useState(false);
@@ -84,17 +85,6 @@ export default function Home() {
       .finally(() => setLoading(false));
   }, []);
 
-  async function login(event: FormEvent) {
-    event.preventDefault();
-    await run(async () => {
-      await api("/api/login", {
-        method: "POST",
-        body: JSON.stringify({ password }),
-      });
-      setPassword("");
-    });
-  }
-
   async function logout() {
     await run(async () => {
       await api("/api/logout", { method: "POST" });
@@ -107,19 +97,11 @@ export default function Home() {
     await run(async () => {
       await api("/api/members", {
         method: "POST",
-        body: JSON.stringify({ name: memberName }),
+        body: JSON.stringify({ name: memberName, invitation, claimExisting }),
       });
       setMemberName("");
+      setInvitation("");
     });
-  }
-
-  async function selectMember(memberId: string) {
-    await run(() =>
-      api("/api/members/select", {
-        method: "POST",
-        body: JSON.stringify({ memberId }),
-      }),
-    );
   }
 
   function startSongEdit(song: AppState["songs"][number]) {
@@ -265,26 +247,22 @@ export default function Home() {
 
   if (!state.authenticated) {
     return (
-      <LoginScreen
-        password={password}
-        busy={busy}
-        error={error}
-        onPasswordChange={setPassword}
-        onSubmit={login}
-      />
+      <LoginScreen onAuthenticated={refresh} />
     );
   }
 
   if (!currentMember) {
     return (
       <IdentityScreen
-        members={state.members}
         memberName={memberName}
+        invitation={invitation}
+        claimExisting={claimExisting}
         busy={busy}
         error={error}
         onMemberNameChange={setMemberName}
+        onInvitationChange={setInvitation}
+        onClaimExistingChange={setClaimExisting}
         onCreateMember={createMember}
-        onSelectMember={selectMember}
         onLogout={logout}
       />
     );
@@ -295,7 +273,6 @@ export default function Home() {
       <AppHeader
         memberName={currentMember.name}
         busy={busy}
-        onSwitchMember={() => selectMember("")}
         onLogout={logout}
       />
       <div className="page-content">

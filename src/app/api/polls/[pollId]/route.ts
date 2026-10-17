@@ -6,7 +6,7 @@ import { getSupabase } from "@/lib/supabase";
 type Context = { params: { pollId: string } };
 
 export async function PATCH(request: Request, { params }: Context) {
-  const { error: memberError } = requireMember();
+  const { error: memberError } = await requireMember();
   if (memberError) return memberError;
 
   const body = await parseJson<{ title?: string; songIds?: string[] }>(request);
@@ -78,7 +78,7 @@ export async function PATCH(request: Request, { params }: Context) {
 }
 
 export async function DELETE(_request: Request, { params }: Context) {
-  const { error: memberError } = requireMember();
+  const { error: memberError } = await requireMember();
   if (memberError) return memberError;
 
   const { error } = await getSupabase().from("polls").delete().eq("id", params.pollId);

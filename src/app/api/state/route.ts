@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { isAuthenticated, selectedMemberId } from "@/lib/auth";
+import { getIdentity } from "@/lib/auth";
 import { jsonError } from "@/lib/http";
-import { getSupabase } from "@/lib/supabase";
 import type { AppState, ChosenSong, Member, Poll, PollScore, PollSong, Song, SongVote } from "@/lib/types";
 
 export async function GET() {
-  if (!isAuthenticated()) {
+  const { supabase, user, memberId } = await getIdentity();
+  if (!user || !memberId) {
     return NextResponse.json({
-      authenticated: false,
+      authenticated: !!user,
       selectedMemberId: null,
       members: [],
       songs: [],
@@ -15,9 +15,6 @@ export async function GET() {
       chosenSongs: []
     } satisfies AppState);
   }
-
-  const supabase = getSupabase();
-  const memberId = selectedMemberId();
 
   const [
     membersResult,

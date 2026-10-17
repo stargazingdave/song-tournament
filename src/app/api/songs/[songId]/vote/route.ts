@@ -7,7 +7,7 @@ import type { VoteValue } from "@/lib/types";
 type Context = { params: { songId: string } };
 
 export async function PUT(request: Request, { params }: Context) {
-  const { error: memberError, memberId } = requireMember();
+  const { error: memberError, memberId } = await requireMember();
   if (memberError) return memberError;
 
   const body = await parseJson<{ vote?: VoteValue | null }>(request);

@@ -4,7 +4,7 @@ import { cleanText, jsonError, parseJson } from "@/lib/http";
 import { getSupabase } from "@/lib/supabase";
 
 export async function POST(request: Request) {
-  const { error: memberError } = requireMember();
+  const { error: memberError } = await requireMember();
   if (memberError) return memberError;
 
   const body = await parseJson<{ title?: string; songIds?: string[] }>(request);

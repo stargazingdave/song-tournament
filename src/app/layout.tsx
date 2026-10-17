@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "@/app/globals.css";
 
 export const metadata: Metadata = {
-  title: "Band Song Selector",
+  title: "Song Tournament",
   description: "A shared song bank, voting board, and poll workspace for a band."
 };
 
