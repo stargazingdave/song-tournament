@@ -11,6 +11,7 @@ export function LoginScreen({ onAuthenticated, initialMode = "login" }: {
   onAuthenticated: () => Promise<void>; initialMode?: Mode;
 }) {
   const [mode, setMode] = useState<Mode>(initialMode);
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repeat, setRepeat] = useState("");
@@ -24,7 +25,7 @@ export function LoginScreen({ onAuthenticated, initialMode = "login" }: {
       if ((mode === "signup" || mode === "update") && password !== repeat) throw new Error("Passwords do not match.");
       const result = await api<{ authenticated?: boolean }>("/api/" + ({
         login: "login", signup: "signup", forgot: "password/reset", update: "password/update",
-      }[mode]), { method: "POST", body: JSON.stringify({ email, password }) });
+      }[mode]), { method: "POST", body: JSON.stringify({ email, password, name }) });
       setPassword(""); setRepeat("");
       if (mode === "login" || mode === "update" || result.authenticated) await onAuthenticated();
       else if (mode === "signup") setMessage("Check your email to confirm your shared account, then sign in here to join Song Tournament. If you already have a Tasks account, use Sign in.");
@@ -40,6 +41,7 @@ export function LoginScreen({ onAuthenticated, initialMode = "login" }: {
     <h2>{title}</h2>
     <p>Your account works across Tasks and Song Tournament. Each app has its own profile and setup.</p>
     <form onSubmit={submit} className="stack auth-form">
+      {mode === "signup" && <label>Display name<input required maxLength={100} autoComplete="nickname" value={name} onChange={e => setName(e.target.value)} disabled={busy}/></label>}
       {mode !== "update" && <label>Email
         <input type="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} required disabled={busy} />
       </label>}

@@ -131,8 +131,8 @@ export function PollsPanel({
                 <p>{poll.songs.length} song{poll.songs.length === 1 ? "" : "s"} · Rate each from 1 to 5</p>
               </div>
               <div className="card-actions">
-                <Button variant="ghost" size="icon" onClick={() => onEdit(poll)} disabled={busy} aria-label={`Edit ${poll.title}`}><Pencil /></Button>
-                <Button variant="ghost" size="icon" className="danger" onClick={() => onDelete(poll.id)} disabled={busy} aria-label={`Delete ${poll.title}`}><Trash2 /></Button>
+                {poll.can_manage && <Button variant="ghost" size="icon" onClick={() => onEdit(poll)} disabled={busy} aria-label={`Edit ${poll.title}`}><Pencil /></Button>}
+                {poll.can_manage && <Button variant="ghost" size="icon" className="danger" onClick={() => onDelete(poll.id)} disabled={busy} aria-label={`Delete ${poll.title}`}><Trash2 /></Button>}
               </div>
             </div>
             <div className="poll-toolbar">
@@ -184,11 +184,11 @@ export function PollsPanel({
                           <button
                             type="button"
                             key={score}
-                            className={entry.current_member_score && score <= entry.current_member_score ? "star active" : "star"}
-                            onClick={() => onScore(poll.id, entry.song.id, entry.current_member_score === score ? null : score)}
+                            className={entry.current_user_score && score <= entry.current_user_score ? "star active" : "star"}
+                            onClick={() => onScore(poll.id, entry.song.id, entry.current_user_score === score ? null : score)}
                             disabled={busy}
                             aria-label={`${score} star${score === 1 ? "" : "s"}`}
-                            aria-pressed={entry.current_member_score === score}
+                            aria-pressed={entry.current_user_score === score}
                           >
                             <Star aria-hidden="true" />
                           </button>
@@ -276,15 +276,15 @@ export function PollsPanel({
                       <button
                         type="button"
                         key={score}
-                        className={playingEntry.current_member_score && score <= playingEntry.current_member_score ? "star active" : "star"}
+                        className={playingEntry.current_user_score && score <= playingEntry.current_user_score ? "star active" : "star"}
                         onClick={() => onScore(
                           playingPoll.id,
                           playingEntry.song.id,
-                          playingEntry.current_member_score === score ? null : score
+                          playingEntry.current_user_score === score ? null : score
                         )}
                         disabled={busy}
                         aria-label={`${score} star${score === 1 ? "" : "s"}`}
-                        aria-pressed={playingEntry.current_member_score === score}
+                        aria-pressed={playingEntry.current_user_score === score}
                       >
                         <Star aria-hidden="true" />
                       </button>

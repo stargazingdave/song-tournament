@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireMember } from "@/lib/auth";
+import { requireBand } from "@/lib/auth";
 import { cleanText, jsonError, parseJson } from "@/lib/http";
 import { getSupabase } from "@/lib/supabase";
 import { parseYoutubeUrl } from "@/lib/youtube";
@@ -7,7 +7,7 @@ import { parseYoutubeUrl } from "@/lib/youtube";
 type Context = { params: { songId: string } };
 
 export async function PATCH(request: Request, { params }: Context) {
-  const { error: memberError } = await requireMember();
+  const { error: memberError, bandId } = await requireBand(request);
   if (memberError) return memberError;
 
   const body = await parseJson<{ title?: string; artist?: string; youtubeUrl?: string }>(request);
@@ -35,21 +35,21 @@ export async function PATCH(request: Request, { params }: Context) {
       youtube_video_id: youtube?.videoId ?? null,
       updated_at: new Date().toISOString()
     })
-    .eq("id", params.songId)
+    .eq("band_id", bandId).eq("id", params.songId)
     .select("*")
-    .single();
+    .maybeSingle();
 
-  if (error) return jsonError(error.message, 400);
+  if (error || !data) return jsonError(error?.message ?? "You cannot manage this song.", 403);
 
   return NextResponse.json({ song: data });
 }
 
-export async function DELETE(_request: Request, { params }: Context) {
-  const { error: memberError } = await requireMember();
+export async function DELETE(request: Request, { params }: Context) {
+  const { error: memberError, bandId } = await requireBand(request);
   if (memberError) return memberError;
 
-  const { error } = await getSupabase().from("songs").delete().eq("id", params.songId);
-  if (error) return jsonError(error.message, 400);
+  const { data, error } = await getSupabase().from("songs").delete().eq("band_id", bandId).eq("id", params.songId).select("id").maybeSingle();
+  if (error || !data) return jsonError(error?.message ?? "You cannot delete this song.", 403);
 
   return NextResponse.json({ ok: true });
 }

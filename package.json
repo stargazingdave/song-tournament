@@ -8,7 +8,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "next lint",
     "db:migrate": "node --env-file-if-exists=.env.local scripts/migrate.mjs",
-    "test:auth": "node --test tests/auth.test.mjs"
+    "test:auth": "node --test tests/auth.test.mjs tests/bands.test.mjs",
+    "test:bands": "node --test tests/bands.test.mjs"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.3.11",

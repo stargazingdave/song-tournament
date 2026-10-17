@@ -2,6 +2,7 @@ import { LogOut, Music2, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Props = {
+  children?: React.ReactNode;
   memberName: string;
   busy: boolean;
   onLogout: () => void;
@@ -9,6 +10,7 @@ type Props = {
 
 export function AppHeader({
   memberName,
+  children,
   busy,
   onLogout,
 }: Props) {
@@ -23,6 +25,7 @@ export function AppHeader({
         </div>
       </div>
       <div className="session-actions">
+        {children}
         <span className="member-chip">
           <UserRound aria-hidden="true" /> {memberName}
         </span>

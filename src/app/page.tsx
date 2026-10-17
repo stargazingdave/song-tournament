@@ -1,24 +1,25 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { IdentityScreen } from "@/components/auth/IdentityScreen";
 import { LoginScreen } from "@/components/auth/LoginScreen";
-import { ChosenSongsPanel } from "@/components/chosen/ChosenSongsPanel";
+import { SetsPanel } from "@/components/sets/SetsPanel";
 import { PollDialog, PollsPanel } from "@/components/polls/PollsPanel";
 import { SongBank, type SongForm } from "@/components/songs/SongBank";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { api } from "@/lib/client-api";
+import { BandControls, BandDashboard } from "@/components/bands/BandControls";
+import { Button } from "@/components/ui/button";
+import { api, selectApiBand, selectApiSet } from "@/lib/client-api";
 import type { AppState, VoteValue } from "@/lib/types";
 
 const emptyState: AppState = {
   authenticated: false,
-  selectedMemberId: null,
-  members: [],
+  profile: null, suggestedDisplayName: "", bands: [], selectedBandId: null, people: [], joinRequests: [], bandCode: null, legacyOptions: [],
   songs: [],
   polls: [],
-  chosenSongs: [],
+  setSongs: [], sets: [], selectedSetId: null, canManageSets: false,
 };
 
 const emptySongForm: SongForm = { title: "", artist: "", youtubeUrl: "" };
@@ -28,9 +29,6 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [memberName, setMemberName] = useState("");
-  const [invitation, setInvitation] = useState("");
-  const [claimExisting, setClaimExisting] = useState(false);
   const [songForm, setSongForm] = useState<SongForm>(emptySongForm);
   const [editingSongId, setEditingSongId] = useState<string | null>(null);
   const [songDialogOpen, setSongDialogOpen] = useState(false);
@@ -41,17 +39,17 @@ export default function Home() {
   const [chosenSongId, setChosenSongId] = useState("");
   const [chosenNote, setChosenNote] = useState("");
 
-  const currentMember = useMemo(
-    () =>
-      state.members.find((member) => member.id === state.selectedMemberId) ??
-      null,
-    [state.members, state.selectedMemberId],
-  );
-  const availableChosenSongs = state.songs.filter((song) => !song.is_chosen);
+  const currentBand = state.bands.find(band => band.id === state.selectedBandId);
+  const availableChosenSongs = state.songs.filter((song) => !song.is_in_set);
   const hasOpenPolls = state.polls.length > 0;
 
   async function refresh() {
-    setState(await api<AppState>("/api/state"));
+    const next = await api<AppState>("/api/state");
+    selectApiBand(next.selectedBandId);
+    selectApiSet(next.selectedSetId);
+    if(next.selectedBandId) localStorage.setItem("song-active-band",next.selectedBandId);
+    else localStorage.removeItem("song-active-band");
+    setState(next);
   }
 
   async function run(action: () => Promise<void>) {
@@ -74,6 +72,7 @@ export default function Home() {
   }
 
   useEffect(() => {
+    selectApiBand(localStorage.getItem("song-active-band"));
     refresh()
       .catch((nextError) =>
         setError(
@@ -92,16 +91,12 @@ export default function Home() {
     });
   }
 
-  async function createMember(event: FormEvent) {
-    event.preventDefault();
-    await run(async () => {
-      await api("/api/members", {
-        method: "POST",
-        body: JSON.stringify({ name: memberName, invitation, claimExisting }),
-      });
-      setMemberName("");
-      setInvitation("");
-    });
+  async function selectBand(id: string) {
+    selectApiBand(id); selectApiSet(null); setBusy(true); setError("");
+    setSongDialogOpen(false); setPollDialogOpen(false); setSongForm(emptySongForm); setEditingSongId(null);
+    setPollSongIds([]); setEditingPollId(null); setChosenSongId(""); setChosenNote("");
+    try { await refresh(); } catch(error) { setError(error instanceof Error ? error.message : "Could not switch bands."); selectApiBand(state.selectedBandId); }
+    finally { setBusy(false); }
   }
 
   function startSongEdit(song: AppState["songs"][number]) {
@@ -198,7 +193,7 @@ export default function Home() {
   async function addChosen(event: FormEvent) {
     event.preventDefault();
     await run(async () => {
-      await api("/api/chosen", {
+      await api(`/api/sets/${state.selectedSetId}/songs`, {
         method: "POST",
         body: JSON.stringify({ songId: chosenSongId, note: chosenNote }),
       });
@@ -210,7 +205,7 @@ export default function Home() {
   async function addSelectedChosen(songIds: string[]) {
     return run(async () => {
       for (const songId of songIds) {
-        await api("/api/chosen", {
+        await api(`/api/sets/${state.selectedSetId}/songs`, {
           method: "POST",
           body: JSON.stringify({ songId, note: "" }),
         });
@@ -219,7 +214,7 @@ export default function Home() {
   }
 
   async function moveChosen(id: string, direction: -1 | 1) {
-    const orderedIds = state.chosenSongs.map((chosen) => chosen.id);
+    const orderedIds = state.setSongs.map((chosen) => chosen.id);
     const index = orderedIds.indexOf(id);
     const nextIndex = index + direction;
     if (index < 0 || nextIndex < 0 || nextIndex >= orderedIds.length) return;
@@ -228,7 +223,7 @@ export default function Home() {
       orderedIds[index],
     ];
     await run(() =>
-      api("/api/chosen/reorder", {
+      api(`/api/sets/${state.selectedSetId}/reorder`, {
         method: "PUT",
         body: JSON.stringify({ orderedIds }),
       }),
@@ -251,31 +246,25 @@ export default function Home() {
     );
   }
 
-  if (!currentMember) {
-    return (
-      <IdentityScreen
-        memberName={memberName}
-        invitation={invitation}
-        claimExisting={claimExisting}
-        busy={busy}
-        error={error}
-        onMemberNameChange={setMemberName}
-        onInvitationChange={setInvitation}
-        onClaimExistingChange={setClaimExisting}
-        onCreateMember={createMember}
-        onLogout={logout}
-      />
-    );
-  }
+  if (!state.profile) return <IdentityScreen suggestedName={state.suggestedDisplayName} onComplete={refresh} onLogout={logout} />;
+  if (!currentBand || currentBand.membership_status !== "active") return <main className="shell">
+    <AppHeader memberName={state.profile.display_name} busy={busy} onLogout={logout}>
+      <BandControls state={state} busy={busy} error={error} run={run} onSelect={selectBand} onLogout={logout}/>
+    </AppHeader>
+    <div className="page-content"><BandDashboard key={state.selectedBandId ?? "none"} state={state} busy={busy} error={error} run={run} onSelect={selectBand} onLogout={logout}/></div>
+  </main>;
 
   return (
     <main className="shell">
       <AppHeader
-        memberName={currentMember.name}
+        memberName={state.profile.display_name}
         busy={busy}
         onLogout={logout}
-      />
-      <div className="page-content">
+      >
+        <BandControls key={currentBand.id} state={state} busy={busy} error={error} run={run} onSelect={selectBand} onLogout={logout}/>
+      </AppHeader>
+      <div className="page-content" key={currentBand.id}>
+        <div className="band-heading"><h1>{currentBand.name}</h1><Button variant="ghost" disabled={busy} onClick={()=>void run(async()=>{})}>Refresh</Button></div>
         {error ? <p className="error">{error}</p> : null}
         <Tabs
           key={hasOpenPolls ? "with-polls" : "without-polls"}
@@ -288,9 +277,9 @@ export default function Home() {
               </TabsTrigger>
             ) : null}
             <TabsTrigger value="songs">Songs</TabsTrigger>
-            <TabsTrigger value="winners">
-              Winners{" "}
-              <span className="tab-count">{state.chosenSongs.length}</span>
+            <TabsTrigger value="sets">
+              Sets{" "}
+              <span className="tab-count">{state.sets.length}</span>
             </TabsTrigger>
           </TabsList>
           {hasOpenPolls ? (
@@ -308,7 +297,8 @@ export default function Home() {
           ) : null}
           <TabsContent value="songs">
             <SongBank
-              songs={availableChosenSongs}
+              songs={state.songs}
+              canManageSets={state.canManageSets && !!state.selectedSetId}
               form={songForm}
               editingSongId={editingSongId}
               dialogOpen={songDialogOpen}
@@ -324,18 +314,15 @@ export default function Home() {
               onAddToChosen={addSelectedChosen}
             />
           </TabsContent>
-          <TabsContent value="winners">
-            <ChosenSongsPanel
-              chosenSongs={state.chosenSongs}
-              availableSongs={availableChosenSongs}
-              songId={chosenSongId}
-              note={chosenNote}
-              busy={busy}
-              onSongIdChange={setChosenSongId}
-              onNoteChange={setChosenNote}
-              onAdd={addChosen}
-              onMove={moveChosen}
-              onDelete={(id) => deleteResource(`/api/chosen/${id}`)}
+          <TabsContent value="sets">
+            <SetsPanel key={state.selectedSetId ?? "no-set"} state={state} availableSongs={availableChosenSongs}
+              songId={chosenSongId} note={chosenNote} busy={busy}
+              onSongIdChange={setChosenSongId} onNoteChange={setChosenNote} onAdd={addChosen} onMove={moveChosen}
+              onDelete={id => deleteResource(`/api/sets/${state.selectedSetId}/songs/${id}`)}
+              onSelect={id=>{selectApiSet(id);setChosenSongId("");setChosenNote("");void run(async()=>{});}}
+              onCreate={name=>run(async()=>{const result=await api<{setId:string}>("/api/sets",{method:"POST",body:JSON.stringify({name})});selectApiSet(result.setId);})}
+              onRename={name=>run(async()=>{await api(`/api/sets/${state.selectedSetId}`,{method:"PATCH",body:JSON.stringify({name})});})}
+              onDeleteSet={()=>run(async()=>{await api(`/api/sets/${state.selectedSetId}`,{method:"DELETE"});selectApiSet(null);})}
             />
           </TabsContent>
         </Tabs>

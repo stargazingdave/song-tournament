@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { requireMember } from "@/lib/auth";
+import { requireBand } from "@/lib/auth";
 import { cleanText, jsonError, parseJson } from "@/lib/http";
 import { getSupabase } from "@/lib/supabase";
 import { parseYoutubeUrl } from "@/lib/youtube";
 
 export async function POST(request: Request) {
-  const { error: memberError, memberId } = await requireMember();
+  const { error: memberError, bandId, userId } = await requireBand(request);
   if (memberError) return memberError;
 
   const body = await parseJson<{ title?: string; artist?: string; youtubeUrl?: string }>(request);
@@ -27,11 +27,12 @@ export async function POST(request: Request) {
   const { data, error } = await getSupabase()
     .from("songs")
     .insert({
+      band_id: bandId,
       title,
       artist,
       youtube_url: youtube?.normalizedUrl ?? null,
       youtube_video_id: youtube?.videoId ?? null,
-      added_by_member_id: memberId
+      added_by_user_id: userId
     })
     .select("*")
     .single();

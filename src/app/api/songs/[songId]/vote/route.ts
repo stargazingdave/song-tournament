@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireMember } from "@/lib/auth";
+import { requireBand } from "@/lib/auth";
 import { jsonError, parseJson } from "@/lib/http";
 import { getSupabase } from "@/lib/supabase";
 import type { VoteValue } from "@/lib/types";
@@ -7,7 +7,7 @@ import type { VoteValue } from "@/lib/types";
 type Context = { params: { songId: string } };
 
 export async function PUT(request: Request, { params }: Context) {
-  const { error: memberError, memberId } = await requireMember();
+  const { error: memberError, bandId, userId } = await requireBand(request);
   if (memberError) return memberError;
 
   const body = await parseJson<{ vote?: VoteValue | null }>(request);
@@ -16,8 +16,8 @@ export async function PUT(request: Request, { params }: Context) {
     const { error } = await getSupabase()
       .from("song_votes")
       .delete()
-      .eq("song_id", params.songId)
-      .eq("member_id", memberId);
+      .eq("band_id", bandId).eq("song_id", params.songId)
+      .eq("user_id", userId);
 
     if (error) return jsonError(error.message, 400);
     return NextResponse.json({ ok: true });
@@ -27,12 +27,13 @@ export async function PUT(request: Request, { params }: Context) {
 
   const { error } = await getSupabase().from("song_votes").upsert(
     {
+      band_id: bandId,
       song_id: params.songId,
-      member_id: memberId,
+      user_id: userId,
       vote: body.vote,
       updated_at: new Date().toISOString()
     },
-    { onConflict: "song_id,member_id" }
+    { onConflict: "song_id,user_id" }
   );
 
   if (error) return jsonError(error.message, 400);

@@ -21,6 +21,7 @@ type Props = {
   editingSongId: string | null;
   dialogOpen: boolean;
   busy: boolean;
+  canManageSets: boolean;
   onFormChange: (form: SongForm) => void;
   onSave: (event: FormEvent) => void;
   onDialogOpenChange: (open: boolean) => void;
@@ -33,7 +34,7 @@ type Props = {
 };
 
 export function SongBank({
-  songs, form, editingSongId, dialogOpen, busy, onFormChange, onSave, onDialogOpenChange,
+  songs, form, editingSongId, dialogOpen, busy, canManageSets, onFormChange, onSave, onDialogOpenChange,
   onAdd, onEdit, onDelete, onVote, onCreatePoll, onAddToChosen
 }: Props) {
   const [query, setQuery] = useState("");
@@ -94,9 +95,9 @@ export function SongBank({
           <span><strong>{selectedIds.length}</strong> selected</span>
           <div>
             <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])}>Clear</Button>
-            <Button variant="outline" size="sm" onClick={addSelectedToChosen} disabled={busy}>
-              <Trophy /> Add to winners
-            </Button>
+            {canManageSets && <Button variant="outline" size="sm" onClick={addSelectedToChosen} disabled={busy}>
+              <Trophy /> Add to set
+            </Button>}
             <Button size="sm" onClick={() => onCreatePoll(selectedIds)}><Vote /> Create poll</Button>
           </div>
         </div>
@@ -130,18 +131,18 @@ export function SongBank({
                 ) : null}
                 <Button
                   variant="outline" size="sm"
-                  className={song.current_member_vote === "yes" ? "vote-yes" : ""}
-                  onClick={() => onVote(song.id, song.current_member_vote === "yes" ? null : "yes")}
+                  className={song.current_user_vote === "yes" ? "vote-yes" : ""}
+                  onClick={() => onVote(song.id, song.current_user_vote === "yes" ? null : "yes")}
                   disabled={busy}
                 ><Check /> {song.yes_count}</Button>
                 <Button
                   variant="outline" size="sm"
-                  className={song.current_member_vote === "no" ? "vote-no" : ""}
-                  onClick={() => onVote(song.id, song.current_member_vote === "no" ? null : "no")}
+                  className={song.current_user_vote === "no" ? "vote-no" : ""}
+                  onClick={() => onVote(song.id, song.current_user_vote === "no" ? null : "no")}
                   disabled={busy}
                 ><X /> {song.no_count}</Button>
-                <Button variant="ghost" size="icon" onClick={() => onEdit(song)} disabled={busy} aria-label={`Edit ${song.title}`}><Pencil /></Button>
-                <Button variant="ghost" size="icon" className="danger" onClick={() => onDelete(song.id)} disabled={busy} aria-label={`Delete ${song.title}`}><Trash2 /></Button>
+                {song.can_manage && <Button variant="ghost" size="icon" onClick={() => onEdit(song)} disabled={busy} aria-label={`Edit ${song.title}`}><Pencil /></Button>}
+                {song.can_manage && <Button variant="ghost" size="icon" className="danger" onClick={() => onDelete(song.id)} disabled={busy} aria-label={`Delete ${song.title}`}><Trash2 /></Button>}
               </div>
             </article>
           );
@@ -194,10 +195,10 @@ export function SongBank({
                 <div>
                   <Button
                     variant="outline"
-                    className={playingSong.current_member_vote === "yes" ? "vote-yes" : ""}
+                    className={playingSong.current_user_vote === "yes" ? "vote-yes" : ""}
                     onClick={() => onVote(
                       playingSong.id,
-                      playingSong.current_member_vote === "yes" ? null : "yes"
+                      playingSong.current_user_vote === "yes" ? null : "yes"
                     )}
                     disabled={busy}
                   >
@@ -205,10 +206,10 @@ export function SongBank({
                   </Button>
                   <Button
                     variant="outline"
-                    className={playingSong.current_member_vote === "no" ? "vote-no" : ""}
+                    className={playingSong.current_user_vote === "no" ? "vote-no" : ""}
                     onClick={() => onVote(
                       playingSong.id,
-                      playingSong.current_member_vote === "no" ? null : "no"
+                      playingSong.current_user_vote === "no" ? null : "no"
                     )}
                     disabled={busy}
                   >

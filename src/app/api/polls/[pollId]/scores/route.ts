@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { requireMember } from "@/lib/auth";
+import { requireBand } from "@/lib/auth";
 import { cleanText, jsonError, parseJson } from "@/lib/http";
 import { getSupabase } from "@/lib/supabase";
 
 type Context = { params: { pollId: string } };
 
 export async function PUT(request: Request, { params }: Context) {
-  const { error: memberError, memberId } = await requireMember();
+  const { error: memberError, bandId, userId } = await requireBand(request);
   if (memberError) return memberError;
 
   const body = await parseJson<{ songId?: string; score?: number | null }>(request);
@@ -18,9 +18,9 @@ export async function PUT(request: Request, { params }: Context) {
     const { error } = await getSupabase()
       .from("poll_scores")
       .delete()
-      .eq("poll_id", params.pollId)
+      .eq("band_id", bandId).eq("poll_id", params.pollId)
       .eq("song_id", songId)
-      .eq("member_id", memberId);
+      .eq("user_id", userId);
 
     if (error) return jsonError(error.message, 400);
     return NextResponse.json({ ok: true });
@@ -34,13 +34,14 @@ export async function PUT(request: Request, { params }: Context) {
 
   const { error } = await getSupabase().from("poll_scores").upsert(
     {
+      band_id: bandId,
       poll_id: params.pollId,
       song_id: songId,
-      member_id: memberId,
+      user_id: userId,
       score,
       updated_at: new Date().toISOString()
     },
-    { onConflict: "poll_id,song_id,member_id" }
+    { onConflict: "poll_id,song_id,user_id" }
   );
 
   if (error) return jsonError(error.message, 400);
