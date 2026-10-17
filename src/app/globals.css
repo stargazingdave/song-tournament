@@ -533,7 +533,24 @@ a.button, .brand, .back-link, .workspace-nav a, .band-stat { text-decoration: no
 .settings-page, .narrow-card { max-width: 720px; }
 .danger-card { border-color: var(--danger); }
 .danger-card [data-slot="card-title"] { color: var(--danger); }
+.set-index-list, .set-track-list { list-style: none; padding: 0; margin: 0; display: grid; gap: .75rem; }
+.set-index-row { display: flex; align-items: center; gap: 1rem; padding: 1.2rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); color: var(--foreground); text-decoration: none; }
+.set-index-row:hover, .set-index-row:focus-visible { border-color: var(--primary); background: var(--primary-soft); }
+.set-index-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: .65rem; background: var(--muted-bg); color: var(--primary); flex-shrink: 0; }
+.set-index-copy { display: grid; gap: .35rem; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.set-index-copy > span { color: var(--muted); font-size: .83rem; }
+.set-detail { max-width: 900px; }
+.set-detail .back-link { margin-bottom: 0; }
+.set-detail .form-actions { flex-wrap: wrap; }
+.set-add-form { padding: 1.1rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); }
+.set-add-fields[data-slot="field-group"] { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) auto; align-items: end; gap: .75rem; }
+.selection-bar > div { align-items: center; flex-wrap: wrap; }
+.set-destination { display: flex; align-items: center; gap: .5rem; min-width: 0; }
+.set-destination select { width: 180px; min-height: 34px; padding-block: .35rem; font-size: .85rem; }
 @media (max-width: 760px) {
+  .set-add-fields[data-slot="field-group"] { grid-template-columns: 1fr; }
+  .set-destination { flex-wrap: wrap; }
+  .set-destination select { width: 100%; }
   .management-heading, .workspace-heading { align-items: flex-start; flex-direction: column; }
   .band-card-grid, .overview-grid, .entry-layout { grid-template-columns: 1fr; }
   .entry-layout { gap: 1.5rem; }

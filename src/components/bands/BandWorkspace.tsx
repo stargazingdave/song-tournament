@@ -110,7 +110,9 @@ export function BandWorkspace({ children }: { children: ReactNode }) {
                 const nextBand = state.bands.find(
                   (band) => band.id === event.target.value,
                 );
-                const suffix = pathname.slice(base.length);
+                const suffix = pathname.slice(base.length).startsWith("/sets/")
+                  ? "/sets"
+                  : pathname.slice(base.length);
                 const nextSection =
                   suffix === "/settings" &&
                   nextBand?.owner_user_id !== state.profile?.user_id
@@ -144,7 +146,12 @@ export function BandWorkspace({ children }: { children: ReactNode }) {
               <Link
                 key={path}
                 href={base + path}
-                aria-current={pathname === base + path ? "page" : undefined}
+                aria-current={
+                  pathname === base + path ||
+                  (path === "/sets" && pathname.startsWith(base + "/sets/"))
+                    ? "page"
+                    : undefined
+                }
               >
                 <Icon aria-hidden="true" />
                 {label}

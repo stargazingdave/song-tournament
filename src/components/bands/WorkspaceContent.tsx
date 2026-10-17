@@ -2,19 +2,14 @@
 
 import { useState, type FormEvent } from "react";
 import { useBandSession } from "@/components/bands/BandSession";
-import { SetsPanel } from "@/components/sets/SetsPanel";
 import { PollDialog, PollsPanel } from "@/components/polls/PollsPanel";
 import { SongBank, type SongForm } from "@/components/songs/SongBank";
-import { api, selectApiSet } from "@/lib/client-api";
+import { api } from "@/lib/client-api";
 import type { AppState, VoteValue } from "@/lib/types";
 
 const emptySongForm: SongForm = { title: "", artist: "", youtubeUrl: "" };
 
-export function WorkspaceContent({
-  section,
-}: {
-  section: "songs" | "polls" | "sets";
-}) {
+export function WorkspaceContent({ section }: { section: "songs" | "polls" }) {
   const { state, busy, run } = useBandSession();
   const [songForm, setSongForm] = useState<SongForm>(emptySongForm);
   const [editingSongId, setEditingSongId] = useState<string | null>(null);
@@ -23,11 +18,6 @@ export function WorkspaceContent({
   const [pollSongIds, setPollSongIds] = useState<string[]>([]);
   const [editingPollId, setEditingPollId] = useState<string | null>(null);
   const [pollDialogOpen, setPollDialogOpen] = useState(false);
-  const [chosenSongId, setChosenSongId] = useState("");
-  const [chosenNote, setChosenNote] = useState("");
-
-  const availableChosenSongs = state.songs.filter((song) => !song.is_in_set);
-
   function startSongEdit(song: AppState["songs"][number]) {
     setEditingSongId(song.id);
     setSongForm({
@@ -119,44 +109,15 @@ export function WorkspaceContent({
     );
   }
 
-  async function addChosen(event: FormEvent) {
-    event.preventDefault();
-    await run(async () => {
-      await api(`/api/sets/${state.selectedSetId}/songs`, {
-        method: "POST",
-        body: JSON.stringify({ songId: chosenSongId, note: chosenNote }),
-      });
-      setChosenSongId("");
-      setChosenNote("");
-    });
-  }
-
-  async function addSelectedChosen(songIds: string[]) {
+  async function addSelectedChosen(songIds: string[], setId: string) {
     return run(async () => {
       for (const songId of songIds) {
-        await api(`/api/sets/${state.selectedSetId}/songs`, {
+        await api(`/api/sets/${setId}/songs`, {
           method: "POST",
           body: JSON.stringify({ songId, note: "" }),
         });
       }
     });
-  }
-
-  async function moveChosen(id: string, direction: -1 | 1) {
-    const orderedIds = state.setSongs.map((chosen) => chosen.id);
-    const index = orderedIds.indexOf(id);
-    const nextIndex = index + direction;
-    if (index < 0 || nextIndex < 0 || nextIndex >= orderedIds.length) return;
-    [orderedIds[index], orderedIds[nextIndex]] = [
-      orderedIds[nextIndex],
-      orderedIds[index],
-    ];
-    await run(() =>
-      api(`/api/sets/${state.selectedSetId}/reorder`, {
-        method: "PUT",
-        body: JSON.stringify({ orderedIds }),
-      }),
-    );
   }
 
   const deleteResource = (path: string) =>
@@ -178,7 +139,8 @@ export function WorkspaceContent({
       {section === "songs" && (
         <SongBank
           songs={state.songs}
-          canManageSets={state.canManageSets && !!state.selectedSetId}
+          canManageSets={state.canManageSets && state.sets.length > 0}
+          sets={state.sets}
           form={songForm}
           editingSongId={editingSongId}
           dialogOpen={songDialogOpen}
@@ -192,54 +154,6 @@ export function WorkspaceContent({
           onVote={voteSong}
           onCreatePoll={startPollCreate}
           onAddToChosen={addSelectedChosen}
-        />
-      )}
-      {section === "sets" && (
-        <SetsPanel
-          key={state.selectedSetId ?? "no-set"}
-          state={state}
-          availableSongs={availableChosenSongs}
-          songId={chosenSongId}
-          note={chosenNote}
-          busy={busy}
-          onSongIdChange={setChosenSongId}
-          onNoteChange={setChosenNote}
-          onAdd={addChosen}
-          onMove={moveChosen}
-          onDelete={(id) =>
-            deleteResource(`/api/sets/${state.selectedSetId}/songs/${id}`)
-          }
-          onSelect={(id) => {
-            selectApiSet(id);
-            setChosenSongId("");
-            setChosenNote("");
-            void run(async () => {});
-          }}
-          onCreate={(name) =>
-            run(async () => {
-              const result = await api<{ setId: string }>("/api/sets", {
-                method: "POST",
-                body: JSON.stringify({ name }),
-              });
-              selectApiSet(result.setId);
-            })
-          }
-          onRename={(name) =>
-            run(async () => {
-              await api(`/api/sets/${state.selectedSetId}`, {
-                method: "PATCH",
-                body: JSON.stringify({ name }),
-              });
-            })
-          }
-          onDeleteSet={() =>
-            run(async () => {
-              await api(`/api/sets/${state.selectedSetId}`, {
-                method: "DELETE",
-              });
-              selectApiSet(null);
-            })
-          }
         />
       )}
       <PollDialog

@@ -51,9 +51,10 @@ export function useBandSession() {
 }
 
 export function BandSession({ children }: { children: ReactNode }) {
-  const params = useParams<{ bandId?: string }>();
+  const params = useParams<{ bandId?: string; setId?: string }>();
   const bandId = params.bandId;
-  const routeKey = bandId ?? "bands";
+  const setId = params.setId;
+  const routeKey = `${bandId ?? "bands"}:${setId ?? ""}`;
   const routeRef = useRef(routeKey);
   const requestId = useRef(0);
   const [state, setState] = useState(emptyState);
@@ -65,6 +66,7 @@ export function BandSession({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     const request = ++requestId.current;
     selectApiBand(bandId ?? localStorage.getItem("song-active-band"));
+    selectApiSet(setId ?? null);
     const next = await api<AppState>("/api/state");
     if (routeRef.current !== routeKey || request !== requestId.current) return;
     selectApiBand(bandId ?? next.selectedBandId);
@@ -75,7 +77,7 @@ export function BandSession({ children }: { children: ReactNode }) {
     setState(next);
     setLoadedRoute(routeKey);
     setError("");
-  }, [bandId, routeKey]);
+  }, [bandId, setId, routeKey]);
 
   useEffect(() => {
     let cancelled = false;

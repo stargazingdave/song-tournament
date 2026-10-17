@@ -19,7 +19,9 @@ A user can create and join multiple bands. Creating a band makes that user its o
 | `/bands/[bandId]` | Band overview, invitation code, and workspace counts |
 | `/bands/[bandId]/songs` | Song bank and voting |
 | `/bands/[bandId]/polls` | Polls and scores |
-| `/bands/[bandId]/sets` | Named set lists |
+| `/bands/[bandId]/sets` | List of named sets, linking to each set |
+| `/bands/[bandId]/sets/new` | Create a named set |
+| `/bands/[bandId]/sets/[setId]` | One set’s songs, order, notes, and management |
 | `/bands/[bandId]/members` | Members, join requests, and additional permissions |
 | `/bands/[bandId]/settings` | Owner-only naming and deletion controls |
 
@@ -44,6 +46,8 @@ Additional permissions are configured **per member, per band**. Revoking members
 ## Sets
 
 Each band can have several named sets. Each set has independent song order and notes. A song may appear once in each of several sets. Adding a song to a set does not remove it from the song bank. Removing a set or a set entry does not delete the underlying songs.
+
+The Sets page lists links to individual set pages. Each set URL determines the displayed set, including after refresh and browser Back/Forward. Missing or unrelated set IDs show an unavailable message instead of opening a different set. The song bank’s bulk **Add to set** action requires an explicit destination selection; it never silently defaults to Main set.
 
 The former chosen/winners list was converted into the original band's **Main set**, retaining entries, notes, and order. Poll updates and set reordering use atomic database functions so invalid or stale requests do not partially change data.
 

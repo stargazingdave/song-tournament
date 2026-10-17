@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 export const metadata: Metadata = { title: "Sets" };
 
-import { WorkspaceContent } from "@/components/bands/WorkspaceContent";
+import { SetsIndex } from "@/components/sets/SetsIndex";
 export default function Page() {
-  return <WorkspaceContent section="sets" />;
+  return <SetsIndex />;
 }
