@@ -4,8 +4,8 @@ import { getSupabase } from "@/lib/supabase";
 import { jsonError } from "@/lib/http";
 
 export async function POST() {
-  const { error } = await getSupabase().auth.signOut({ scope: "local" });
+  const { error } = await (await getSupabase()).auth.signOut({ scope: "local" });
   if (error) return jsonError("Could not sign out. Please try again.", 500);
-  clearLegacyCookies();
+  await clearLegacyCookies();
   return NextResponse.json({ ok: true });
 }

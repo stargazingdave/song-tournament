@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   const email = cleanText(body.email);
   const password = typeof body.password === "string" ? body.password : "";
   if (!email || password.length < 8) return jsonError("Enter an email and a password of at least 8 characters.");
-  const { data, error } = await getSupabase().auth.signUp({
+  const { data, error } = await (await getSupabase()).auth.signUp({
     email, password, options: { data: { display_name: name }, emailRedirectTo: new URL("/auth/confirm", request.url).toString() },
   });
   if (error) return jsonError(error.message);

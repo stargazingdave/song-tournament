@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     }
   }
 
-  const { data, error } = await getSupabase()
+  const { data, error } = await (await getSupabase())
     .from("songs")
     .insert({
       band_id: bandId,

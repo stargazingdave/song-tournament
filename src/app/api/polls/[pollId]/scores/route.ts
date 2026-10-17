@@ -3,7 +3,7 @@ import { requireBand } from "@/lib/auth";
 import { cleanText, jsonError, parseJson } from "@/lib/http";
 import { getSupabase } from "@/lib/supabase";
 
-type Context = { params: { pollId: string } };
+type Context = { params: Promise<{ pollId: string }> };
 
 export async function PUT(request: Request, { params }: Context) {
   const { error: memberError, bandId, userId } = await requireBand(request);
@@ -15,10 +15,10 @@ export async function PUT(request: Request, { params }: Context) {
   if (!songId) return jsonError("Song is required.");
 
   if (body.score === null) {
-    const { error } = await getSupabase()
+    const { error } = await (await getSupabase())
       .from("poll_scores")
       .delete()
-      .eq("band_id", bandId).eq("poll_id", params.pollId)
+      .eq("band_id", bandId).eq("poll_id", (await params).pollId)
       .eq("song_id", songId)
       .eq("user_id", userId);
 
@@ -32,10 +32,10 @@ export async function PUT(request: Request, { params }: Context) {
     return jsonError("Score must be from 1 to 5.");
   }
 
-  const { error } = await getSupabase().from("poll_scores").upsert(
+  const { error } = await (await getSupabase()).from("poll_scores").upsert(
     {
       band_id: bandId,
-      poll_id: params.pollId,
+      poll_id: (await params).pollId,
       song_id: songId,
       user_id: userId,
       score,

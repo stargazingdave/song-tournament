@@ -10,7 +10,20 @@ App profiles use user IDs directly. The old shared-password login and free-text 
 
 ## Bands and membership
 
-A user can create and join multiple bands. Creating a band makes that user its owner and creates its first **Main set**. Use the band selector to switch workspaces; **Bands** opens creation, join requests, member permissions, codes, and owner controls.
+A user can create and join multiple bands. Creating a band makes that user its owner and creates its first **Main set**. The home page lists your bands and requests. Each band has its own workspace URL, with normal links between songs, polls, sets, members, and settings.
+
+| Route | Page |
+| --- | --- |
+| `/bands` | Your bands and outstanding requests |
+| `/bands/new`, `/bands/join` | Create a band or request access |
+| `/bands/[bandId]` | Band overview, invitation code, and workspace counts |
+| `/bands/[bandId]/songs` | Song bank and voting |
+| `/bands/[bandId]/polls` | Polls and scores |
+| `/bands/[bandId]/sets` | Named set lists |
+| `/bands/[bandId]/members` | Members, join requests, and additional permissions |
+| `/bands/[bandId]/settings` | Owner-only naming and deletion controls |
+
+Band URLs support bookmarks, direct visits, and browser Back/Forward. Switching bands preserves the current section. Approval and legacy-import requirements gate every band page, including direct links. Band management is no longer a dialog.
 
 The owner copies a random band code to share it. Entering a current code creates a **pending request**. It grants no access to songs, polls, sets, or legacy migration options. The owner must approve the request. Owners can regenerate/rotate codes; previous codes immediately stop accepting new requests. Already submitted requests and existing memberships remain intact.
 
@@ -64,7 +77,7 @@ The nullable legacy attribution columns exist only for unclaimed migration data.
 
 ## Setup and migrations
 
-Use Node.js 22+, install dependencies, and copy `.env.example` to `.env.local`.
+The app uses Next.js 16 and React 19. Use Node.js 22+, install dependencies, and copy `.env.example` to `.env.local`. Next.js Proxy (`src/proxy.ts`) refreshes auth cookies and applies API request checks; database RLS remains the authorization boundary. Server cookie access and dynamic API route params use the async Next.js 16 APIs. Linting uses the ESLint CLI and flat configuration.
 
 Required runtime configuration:
 
@@ -96,7 +109,7 @@ The runner uses a transaction, advisory lock, and checksummed migration history.
 npm.cmd run dev -- --port 3001
 ```
 
-If another Next.js 14 server/build is using this checkout, isolate generated files:
+Restart any existing dev server after upgrading dependencies. To isolate generated files while running an additional local server/build:
 
 ```powershell
 $env:NEXT_DIST_DIR='.next-auth-check'

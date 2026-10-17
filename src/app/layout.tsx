@@ -3,7 +3,7 @@ import "@/app/globals.css";
 
 export const metadata: Metadata = {
   title: "Song Tournament",
-  description: "A shared song bank, voting board, and poll workspace for a band."
+  description: "Private band workspaces for songs, polls, and set lists."
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -9,7 +9,7 @@ export async function GET(request: Request) {
   const hash = url.searchParams.get("token_hash");
   const type = url.searchParams.get("type");
   const next = url.searchParams.get("next") === "/auth/update-password" || type === "recovery" ? "/auth/update-password" : "/";
-  const supabase = getSupabase();
+  const supabase = (await getSupabase());
   const result = code
     ? await supabase.auth.exchangeCodeForSession(code)
     : hash && type && allowedTypes.includes(type)

@@ -4,7 +4,7 @@ import { cleanText, jsonError, parseJson } from "@/lib/http";
 import { getSupabase } from "@/lib/supabase";
 import { parseYoutubeUrl } from "@/lib/youtube";
 
-type Context = { params: { songId: string } };
+type Context = { params: Promise<{ songId: string }> };
 
 export async function PATCH(request: Request, { params }: Context) {
   const { error: memberError, bandId } = await requireBand(request);
@@ -26,7 +26,7 @@ export async function PATCH(request: Request, { params }: Context) {
     }
   }
 
-  const { data, error } = await getSupabase()
+  const { data, error } = await (await getSupabase())
     .from("songs")
     .update({
       title,
@@ -35,7 +35,7 @@ export async function PATCH(request: Request, { params }: Context) {
       youtube_video_id: youtube?.videoId ?? null,
       updated_at: new Date().toISOString()
     })
-    .eq("band_id", bandId).eq("id", params.songId)
+    .eq("band_id", bandId).eq("id", (await params).songId)
     .select("*")
     .maybeSingle();
 
@@ -48,7 +48,7 @@ export async function DELETE(request: Request, { params }: Context) {
   const { error: memberError, bandId } = await requireBand(request);
   if (memberError) return memberError;
 
-  const { data, error } = await getSupabase().from("songs").delete().eq("band_id", bandId).eq("id", params.songId).select("id").maybeSingle();
+  const { data, error } = await (await getSupabase()).from("songs").delete().eq("band_id", bandId).eq("id", (await params).songId).select("id").maybeSingle();
   if (error || !data) return jsonError(error?.message ?? "You cannot delete this song.", 403);
 
   return NextResponse.json({ ok: true });

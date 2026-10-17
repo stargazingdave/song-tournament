@@ -3,7 +3,7 @@ import { jsonError } from "@/lib/http";
 import { getSupabase } from "@/lib/supabase";
 
 export async function getIdentity() {
-  const supabase = getSupabase();
+  const supabase = (await getSupabase());
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) return { supabase, user: null, profile: null };
   const { data: profile, error } = await supabase.from("users")
@@ -27,7 +27,8 @@ export async function requireBand(request: Request) {
   return { error: null, bandId, userId: user.id };
 }
 
-export function clearLegacyCookies() {
-  cookies().delete("band_session");
-  cookies().delete("band_member_id");
+export async function clearLegacyCookies() {
+  const store = await cookies();
+  store.delete("band_session");
+  store.delete("band_member_id");
 }

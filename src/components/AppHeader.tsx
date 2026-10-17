@@ -1,5 +1,6 @@
 import { LogOut, Music2, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 type Props = {
   children?: React.ReactNode;
@@ -16,14 +17,14 @@ export function AppHeader({
 }: Props) {
   return (
     <header className="topbar">
-      <div className="brand">
+      <Link href="/bands" className="brand" aria-label="Song Tournament home">
         <span className="brand-mark">
           <Music2 aria-hidden="true" />
         </span>
         <div>
           <strong>Song Tournament</strong>
         </div>
-      </div>
+      </Link>
       <div className="session-actions">
         {children}
         <span className="member-chip">

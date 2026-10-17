@@ -8,8 +8,8 @@ export async function POST(request: Request) {
   const email = cleanText(body.email);
   const password = typeof body.password === "string" ? body.password : "";
   if (!email || !password) return jsonError("Enter your email and password.");
-  const { error } = await getSupabase().auth.signInWithPassword({ email, password });
+  const { error } = await (await getSupabase()).auth.signInWithPassword({ email, password });
   if (error) return jsonError(error.message, 401);
-  clearLegacyCookies();
+  await clearLegacyCookies();
   return NextResponse.json({ ok: true });
 }
