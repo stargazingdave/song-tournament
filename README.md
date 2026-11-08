@@ -141,3 +141,17 @@ node --env-file=.env.local scripts/verify-auth-http.mjs
 ```
 
 The HTTP verifier uses disposable confirmed accounts and bands, exercises a disposable legacy migration and all main permission/set flows, and cleans up its fixtures without sending emails. Override `SONG_APP_URL`/`TASKS_APP_URL` for other local ports. The Tasks repo also provides a rollback-only cross-app database verifier.
+
+
+## Manual Open Graph preview
+
+Install/link the local CLI once from `C:\Code\og-capture` (`npm ci`, `npm run build`, `npm run browser:install`, `npm link`). Its README documents configuration and troubleshooting. No CLI dependency is added to this app.
+
+```powershell
+npm run og:preview
+npm run og:generate
+```
+
+`/og-preview` reuses `AppHeader`, the extracted production `BandsHome`, cards, buttons, and normal layout classes. The typed fixture contains Alex Morgan and exactly one fictional band, The Midnight Satellites. The route is outside the authenticated `/bands` layout and proxy matcher; it mounts no session loader and needs no Supabase calls.
+
+Generation writes `public/song-tournament.png` (1200 × 630). Review and explicitly add the PNG and source changes to Git. It ships as a public static asset in the existing deployment; generation never runs during dev, build, CI, or deployment. Preview opens a visible browser; close its window or press Ctrl+C to clean up. Existing servers are reused and left running. If Web Audio needs a visible browser, set `browser.headed` to `true` and `browser.channel` to `"chrome"` in `og.config.json` (installed Chrome is already configured for visible previews on this machine).

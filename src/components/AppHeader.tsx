@@ -6,18 +6,20 @@ type Props = {
   children?: React.ReactNode;
   memberName: string;
   busy: boolean;
+  prefetch?: false;
   onLogout: () => void;
 };
 
 export function AppHeader({
   memberName,
+  prefetch,
   children,
   busy,
   onLogout,
 }: Props) {
   return (
     <header className="topbar">
-      <Link href="/bands" className="brand" aria-label="Song Tournament home">
+      <Link prefetch={prefetch} href="/bands" className="brand" aria-label="Song Tournament home">
         <span className="brand-mark">
           <Music2 aria-hidden="true" />
         </span>

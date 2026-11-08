@@ -1,0 +1,23 @@
+{
+  "server": {
+    "command": "npm run dev -- --hostname 127.0.0.1 --port 3102",
+    "cwd": ".",
+    "url": "http://127.0.0.1:3102",
+    "readyPath": "/og-preview",
+    "startupTimeoutMs": 180000
+  },
+  "route": "/og-preview",
+  "selector": "#og-preview",
+  "output": "public/song-tournament.png",
+  "width": 1200,
+  "height": 630,
+  "deviceScaleFactor": 1,
+  "timeoutMs": 60000,
+  "ready": {
+    "type": "selector",
+    "selector": "#og-preview[data-ready=\"true\"]"
+  },
+  "browser": {
+    "previewChannel": "chrome"
+  }
+}
